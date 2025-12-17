@@ -1,0 +1,106 @@
+import itertools
+import time
+import math
+
+# =========================
+# Cities
+# =========================
+city_names = [
+    "Alger", "Batna", "Oran", "Setif", "Constantine",
+    "Tlemcen", "Ouargla", "Annaba", "Bechar", "Tizi-Ouzou"
+]
+
+# =========================
+# Distance Matrix (Km)
+# =========================
+DISTANCES = [
+    [0, 430, 415, 260, 320, 520, 770, 600, 970, 110],
+    [430, 0, 798, 100, 120, 620, 420, 300, 950, 350],
+    [415, 798, 0, 430, 500, 180, 850, 780, 720, 380],
+    [260, 100, 430, 0, 115, 500, 620, 310, 800, 250],
+    [320, 120, 500, 115, 0, 550, 610, 160, 950, 340],
+    [520, 620, 180, 500, 550, 0, 1000, 720, 450, 540],
+    [770, 420, 850, 620, 610, 1000, 0, 720, 770, 640],
+    [600, 300, 780, 310, 160, 720, 720, 0, 1150, 360],
+    [970, 950, 720, 800, 950, 450, 770, 1150, 0, 1160],
+    [110, 350, 380, 250, 340, 540, 640, 360, 1160, 0]
+]
+
+# =========================
+# Distance of a route
+# =========================
+def calculate_distance(path, matrix):
+    distance_sum = 0
+    for idx in range(len(path) - 1):
+        distance_sum += matrix[path[idx]][path[idx + 1]]
+    return distance_sum
+
+# =========================
+# Brute Force TSP
+# =========================
+def brute_force_tsp(matrix):
+    size = len(matrix)
+    shortest_distance = math.inf
+    shortest_route = None
+
+    start = time.time()
+    perms = list(itertools.permutations(range(1, size)))
+    perm_count = len(perms)
+
+    for p in perms:
+        route = [0] + list(p) + [0]
+        current_distance = calculate_distance(route, matrix)
+
+        if current_distance < shortest_distance:
+            shortest_distance = current_distance
+            shortest_route = route
+
+    duration = time.time() - start
+
+    return shortest_route, shortest_distance, perm_count, duration
+
+# =========================
+# Nearest Neighbor TSP
+# =========================
+def nearest_neighbor_tsp(matrix, start_city=0):
+    size = len(matrix)
+    visited = [start_city]
+    current_city = start_city
+    total_dist = 0
+
+    while len(visited) < size:
+        closest = None
+        min_dist = math.inf
+
+        for city in range(size):
+            if city not in visited and matrix[current_city][city] < min_dist:
+                min_dist = matrix[current_city][city]
+                closest = city
+
+        visited.append(closest)
+        total_dist += min_dist
+        current_city = closest
+
+    total_dist += matrix[current_city][start_city]
+    visited.append(start_city)
+
+    return visited, total_dist
+
+# =========================
+# MAIN
+# =========================
+if __name__ == "__main__":
+
+    print("===== BRUTE FORCE TSP =====")
+    bf_route, bf_distance, bf_count, bf_time = brute_force_tsp(DISTANCES)
+    print("Route:")
+    print(" -> ".join(city_names[i] for i in bf_route))
+    print("Total distance:", bf_distance, "km")
+    print("Permutations:", bf_count)
+    print("Execution time:", round(bf_time, 3), "seconds")
+
+    print("\n===== NEAREST NEIGHBOR TSP =====")
+    nn_route, nn_distance = nearest_neighbor_tsp(DISTANCES)
+    print("Route:")
+    print(" -> ".join(city_names[i] for i in nn_route))
+    print("Total distance:", nn_distance, "km")
